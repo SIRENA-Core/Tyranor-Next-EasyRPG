@@ -6,7 +6,7 @@
 > - MAGES. 接入记录：[docs/impacto-upstream-only.md](file:///Users/weiss/opencode/rma/TyranorNext/docs/impacto-upstream-only.md)
 > - 外置模块契约与更新检测：[ExternalEngineModule.kt](file:///Users/weiss/opencode/rma/TyranorNext/app/src/main/java/com/tyranor/next/core/engine/external/ExternalEngineModule.kt)、[ImpactoExternalEngineModule.kt](file:///Users/weiss/opencode/rma/TyranorNext/app/src/main/java/com/tyranor/next/core/engine/external/ImpactoExternalEngineModule.kt)、[ExternalEngineUpdateChecker.kt](file:///Users/weiss/opencode/rma/TyranorNext/app/src/main/java/com/tyranor/next/core/engine/external/ExternalEngineUpdateChecker.kt)、[ExternalEngineLauncher.kt](file:///Users/weiss/opencode/rma/TyranorNext/app/src/main/java/com/tyranor/next/core/engine/external/ExternalEngineLauncher.kt)
 > - 引擎页与更新跳转：[EngineScreen.kt](file:///Users/weiss/opencode/rma/TyranorNext/app/src/main/java/com/tyranor/next/ui/engine/EngineScreen.kt)
-> - 宿主仓库：`https://github.com/Weiss-UltimateSavior/Tyranor-Next-EasyRPG`（本地工作区 `/Volumes/HUAWEI-M2LITE/app/tyn-easyrpg`）
+> - 宿主仓库：`https://github.com/SIRENA-Core/Tyranor-Next-EasyRPG`（本地工作区 `/Volumes/HUAWEI-M2LITE/app/tyn-easyrpg`）
 > - 上游仓库：`https://github.com/EasyRPG/Player`（已调研 `a99ca83`）、`https://github.com/EasyRPG/buildscripts`（已调研 `84cf2f4`）
 
 ---
@@ -106,10 +106,10 @@ tyn-easyrpg/
   - `com.tyranor.next.easyrpg.extra.SETTINGS`（String，扁平 JSON 设置载荷）
 
 #### Release 规范（严格匹配 `ExternalEngineUpdateChecker.kt`）
-`ExternalEngineUpdateChecker` 通过 `GET https://api.github.com/repos/Weiss-UltimateSavior/Tyranor-Next-EasyRPG/releases/latest` 校验更新，发布时必须满足：
+`ExternalEngineUpdateChecker` 通过 `GET https://api.github.com/repos/SIRENA-Core/Tyranor-Next-EasyRPG/releases/latest` 校验更新，发布时必须满足：
 1. 必须为正式 Release（`draft == false` 且 `prerelease == false`）。
 2. `tag_name` 格式为 **`easyrpg-host-<versionName>`**（例如 `easyrpg-host-0.1.0`），去掉前缀 `easyrpg-host-` 后须满足正则 `[0-9]+(?:\.[0-9]+)*`，并与 APK 的 `android:versionName` 完全一致。
-3. Release 资产中至少包含一个 `.apk` 文件，且文件名固定为 **`Tyranor-Next-EasyRPG.apk`**，使主 App 的 `installUrl`（`https://github.com/Weiss-UltimateSavior/Tyranor-Next-EasyRPG/releases/latest/download/Tyranor-Next-EasyRPG.apk`）永久有效。
+3. Release 资产中至少包含一个 `.apk` 文件，且文件名固定为 **`Tyranor-Next-EasyRPG.apk`**，使主 App 的 `installUrl`（`https://github.com/SIRENA-Core/Tyranor-Next-EasyRPG/releases/latest/download/Tyranor-Next-EasyRPG.apk`）永久有效。
 
 ---
 
@@ -124,7 +124,7 @@ tyn-easyrpg/
    - 实现 `ExternalEngineModule`：
      - `id = "easyrpg"`，`engine = EngineType.EASYRPG`，`displayName = "EasyRPG"`
      - `packageName = EasyRpgHostContract.PACKAGE`，`action = EasyRpgHostContract.ACTION_RUN`
-     - `updateSource = ExternalEngineReleaseSource("Weiss-UltimateSavior/Tyranor-Next-EasyRPG", "easyrpg-host-")`
+     - `updateSource = ExternalEngineReleaseSource("SIRENA-Core/Tyranor-Next-EasyRPG", "easyrpg-host-")`
      - `installUrl = "${updateSource.releasesUrl}/latest/download/Tyranor-Next-EasyRPG.apk"`
      - `minimumVersionCode = EasyRpgHostContract.VERSION_CODE.toLong()`
      - `requiresGameDirectoryPath = true`
@@ -174,7 +174,7 @@ tyn-easyrpg/
 ## 5. 分阶段实施计划
 
 ### Phase 1：宿主仓库初始化与上游工具链编译（`Tyranor-Next-EasyRPG`）
-1. 初始化 `/Volumes/HUAWEI-M2LITE/app/tyn-easyrpg` Git 仓库并关联远端 `https://github.com/Weiss-UltimateSavior/Tyranor-Next-EasyRPG.git`，添加只读 Submodule：
+1. 初始化 `/Volumes/HUAWEI-M2LITE/app/tyn-easyrpg` Git 仓库并关联远端 `https://github.com/SIRENA-Core/Tyranor-Next-EasyRPG.git`，添加只读 Submodule：
    - `third_party/Player`（锁定稳定 release tag 或 commit）
    - `third_party/buildscripts`
 2. 编写 `scripts/build_toolchain.sh`，基于本机 NDK `28.2.13676358` 编译 `arm64-v8a`（开发期）及 `armeabi-v7a` / `x86_64`（发布期）依赖工具链至 `.toolchains/`。
@@ -194,7 +194,7 @@ tyn-easyrpg/
 5. 补齐对应单测（仿照 `ImpactoExternalEngineModuleTest`、`ExternalEngineManifestQueriesTest`、`EngineScannerImpactoTest`、`ImpactoSettingsKeysTest`）。
 
 ### Phase 4：CI 发布与真机全链路验收
-1. 配置 `Tyranor-Next-EasyRPG` `.github/workflows/release.yml`：缓存多 ABI 工具链、校验上游洁净、打包签名、发布 `easyrpg-host-<version>` Tag + `Tyranor-Next-EasyRPG.apk` 固定资产到 `Weiss-UltimateSavior/Tyranor-Next-EasyRPG` Releases。
+1. 配置 `Tyranor-Next-EasyRPG` `.github/workflows/release.yml`：缓存多 ABI 工具链、校验上游洁净、打包签名、发布 `easyrpg-host-<version>` Tag + `Tyranor-Next-EasyRPG.apk` 固定资产到 `SIRENA-Core/Tyranor-Next-EasyRPG` Releases。
 2. 真机联调验证清单：
    - **未装宿主时扫描**：放入标准 RM2k/2k3 游戏目录，TyranorNext 扫描入库为 `EasyRPG`；引擎页 `RPGM` 标签显示卡片“未安装”；点击启动游戏或卡片弹窗可直接触发下载。
    - **安装后启动**：授权 `MANAGE_EXTERNAL_STORAGE` 后顺利进入游戏画面、BGM/SE 音频与虚拟按键正常。
