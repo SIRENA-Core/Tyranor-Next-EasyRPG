@@ -133,16 +133,15 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install Android NDK and SDK components
         run: |
           yes | sdkmanager --licenses > /dev/null || true
+          packages=("platforms;android-37.0" "build-tools;36.0.0" "cmake;3.22.1" "ndk;${NDK_VERSION}")
           for attempt in 1 2 3; do
-            if sdkmanager \
-              "platforms;android-37" \
-              "build-tools;36.0.0" \
-              "cmake;3.22.1" \
-              "ndk;${NDK_VERSION}"; then
+            if sdkmanager --channel=3 "${packages[@]}"; then
               exit 0
             fi
             echo "::warning::sdkmanager install failed (attempt ${attempt}/3); retrying..."

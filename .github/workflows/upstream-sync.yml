@@ -81,13 +81,15 @@ jobs:
       - name: Set up Android SDK
         if: steps.sync.outputs.changed == 'true'
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install Android NDK and SDK components
         if: steps.sync.outputs.changed == 'true'
         run: |
           yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager \
-            "platforms;android-37" \
+          sdkmanager --channel=3 \
+            "platforms;android-37.0" \
             "build-tools;36.0.0" \
             "cmake;3.22.1" \
             "ndk;${NDK_VERSION}"
