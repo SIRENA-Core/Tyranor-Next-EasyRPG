@@ -22,6 +22,46 @@ fun configValue(vararg keys: String): String? {
     return null
 }
 
+/**
+ * Host APK version name: the single version field to edit when releasing.
+ * [appVersionCode] is derived automatically (`major*1_000_000 + minor*1_000 + patch`).
+ */
+val appVersionName = "0.1.0"
+
+fun versionCodeOf(name: String): Int {
+    val parts = Regex("\\d+").findAll(name).map { it.value.toInt() }.toList()
+    require(parts.size >= 2) { "versionName must be major.minor[.patch]: $name" }
+    val major = parts[0]
+    val minor = parts.getOrElse(1) { 0 }
+    val patch = parts.getOrElse(2) { 0 }
+    require(minor in 0..999 && patch in 0..999) { "versionName minor/patch must be < 1000: $name" }
+    val code = major * 1_000_000 + minor * 1_000 + patch
+    require(code in 1..2_100_000_000) { "versionCode out of Android range: $code" }
+    return code
+}
+
+val appVersionCode = versionCodeOf(appVersionName)
+
+abstract class PrintAppVersionTask : DefaultTask() {
+    @get:Input
+    abstract val versionName: Property<String>
+
+    @get:Input
+    abstract val versionCode: Property<Int>
+
+    @TaskAction
+    fun print() {
+        println("${versionName.get()} ${versionCode.get()}")
+    }
+}
+
+tasks.register<PrintAppVersionTask>("printAppVersion") {
+    group = "help"
+    description = "Prints appVersionName and the derived appVersionCode."
+    versionName.set(appVersionName)
+    versionCode.set(appVersionCode)
+}
+
 val sdlVersion: String = providers.gradleProperty("sdlVersion").orElse("3.4.20").get()
 val abiFiltersDebug: List<String> = providers.gradleProperty("ABI_FILTERS_DEBUG")
     .orElse("arm64-v8a")
@@ -119,8 +159,8 @@ android {
         applicationId = "com.tyranor.next.easyrpg"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         externalNativeBuild {
             cmake {

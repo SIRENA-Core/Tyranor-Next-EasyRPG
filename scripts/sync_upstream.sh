@@ -138,6 +138,6 @@ if [ -n "$SUMMARY_FILE" ]; then
         echo "- [x] Upstream submodules remain clean and unmodified"
         echo "- [x] \`arm64-v8a\` dependency toolchain + unit tests + release APK + ELF 16 KiB/strip check passed in CI"
         echo "- [ ] Review upstream Android/buildscripts changes above (if any)"
-        echo "- [ ] Bump \`versionCode\` and \`versionName\` in \`app/build.gradle.kts\` before tagging \`easyrpg-host-<versionName>\`"
+        echo "- [ ] Bump \`appVersionName\` in \`app/build.gradle.kts\` (automatically derives \`versionCode\` and triggers release on \`main\`)"
     } > "$SUMMARY_FILE"
 fi
