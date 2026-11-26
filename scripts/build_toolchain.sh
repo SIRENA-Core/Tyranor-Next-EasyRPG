@@ -189,7 +189,7 @@ download_verified() {
     local url="$1"
     local dest="$2"
     local file="${url##*/}"
-    local tmp="${dest}.tmp"
+    local tmp="$(dirname "$dest")/.tmp_${file}"
     local mirror_url="https://easyrpg.org/downloads/sources/${file}"
 
     rm -f "$tmp"
