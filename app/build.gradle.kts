@@ -26,7 +26,7 @@ fun configValue(vararg keys: String): String? {
  * Host APK version name: the single version field to edit when releasing.
  * [appVersionCode] is derived automatically (`major*1_000_000 + minor*1_000 + patch`).
  */
-val appVersionName = "0.1.0"
+val appVersionName = "0.1.1"
 
 fun versionCodeOf(name: String): Int {
     val parts = Regex("\\d+").findAll(name).map { it.value.toInt() }.toList()

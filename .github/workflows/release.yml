@@ -179,19 +179,25 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          if [[ -n "${ANDROID_KEYSTORE_BASE64}" && -n "${ANDROID_KEYSTORE_PASSWORD}" && -n "${ANDROID_KEY_ALIAS}" && -n "${ANDROID_KEY_PASSWORD}" ]]; then
-            printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${RUNNER_TEMP}/release.jks"
-            {
-              echo "ANDROID_KEYSTORE_FILE=${RUNNER_TEMP}/release.jks"
-              echo "ANDROID_KEYSTORE_PASSWORD=${ANDROID_KEYSTORE_PASSWORD}"
-              echo "ANDROID_KEY_ALIAS=${ANDROID_KEY_ALIAS}"
-              echo "ANDROID_KEY_PASSWORD=${ANDROID_KEY_PASSWORD}"
-            } >> "$GITHUB_ENV"
-            echo "signed=release" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::Release signing secrets not configured; falling back to ephemeral debug keystore (not upgradeable across CI runs)."
-            echo "signed=debug" >> "$GITHUB_OUTPUT"
+          missing=0
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing GitHub secret: ${name}"
+              missing=1
+            fi
+          done
+          if [[ "${missing}" -ne 0 ]]; then
+            exit 1
           fi
+
+          printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${RUNNER_TEMP}/release.jks"
+          {
+            echo "ANDROID_KEYSTORE_FILE=${RUNNER_TEMP}/release.jks"
+            echo "ANDROID_KEYSTORE_PASSWORD=${ANDROID_KEYSTORE_PASSWORD}"
+            echo "ANDROID_KEY_ALIAS=${ANDROID_KEY_ALIAS}"
+            echo "ANDROID_KEY_PASSWORD=${ANDROID_KEY_PASSWORD}"
+          } >> "$GITHUB_ENV"
+          echo "signed=release" >> "$GITHUB_OUTPUT"
 
       - name: Build release APK
         run: |
@@ -199,9 +205,10 @@ jobs:
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk dist/Tyranor-Next-EasyRPG.apk
 
-      - name: Verify release APK ELF and versionCode
+      - name: Verify release APK ELF, signature, and versionCode
         run: |
           ./scripts/verify_release_apk.sh dist/Tyranor-Next-EasyRPG.apk
+          "${ANDROID_HOME}/build-tools/36.0.0/apksigner" verify --print-certs dist/Tyranor-Next-EasyRPG.apk
           expected_code="${{ needs.detect-version-change.outputs.version_code }}"
           expected_name="${{ needs.detect-version-change.outputs.version_name }}"
           aapt2="${ANDROID_HOME}/build-tools/36.0.0/aapt2"
@@ -220,13 +227,8 @@ jobs:
           TAG_NAME: easyrpg-host-${{ needs.detect-version-change.outputs.version_name }}
           VERSION_NAME: ${{ needs.detect-version-change.outputs.version_name }}
           VERSION_CODE: ${{ needs.detect-version-change.outputs.version_code }}
-          SIGN_MODE: ${{ steps.signing.outputs.signed }}
         run: |
           NOTES="EasyRPG host APK ${VERSION_NAME} (versionCode ${VERSION_CODE}), commit ${GITHUB_SHA}."
-          if [[ "${SIGN_MODE}" != "release" ]]; then
-            NOTES="${NOTES}"$'\n\n'"Note: Signed with ephemeral CI debug keystore (release keystore secrets not yet configured; configure ANDROID_KEYSTORE_* secrets for in-place upgrade compatibility)."
-          fi
-
           if gh release view "${TAG_NAME}" >/dev/null 2>&1; then
             gh release upload "${TAG_NAME}" dist/Tyranor-Next-EasyRPG.apk --clobber
           else
