@@ -54,6 +54,14 @@ git submodule update --init --recursive
 ./scripts/verify_release_apk.sh app/build/outputs/apk/debug/app-debug.apk
 ```
 
+## Updating Upstream Submodules
+
+- Manual sync (with automatic `sdlVersion` alignment in `gradle.properties`):
+  ```bash
+  ./scripts/sync_upstream.sh
+  ```
+- Automated weekly check: [upstream-sync.yml](.github/workflows/upstream-sync.yml) runs every Monday (`03:00 UTC`, or manually via `workflow_dispatch`), syncs `third_party/Player` & `third_party/buildscripts`, validates the `arm64-v8a` toolchain, unit tests, and release APK, and opens/updates a PR against `main`.
+
 ## License (GNU GPLv3)
 
 EasyRPG Player and `libeasyrpg_android.so` are licensed under the GNU General Public License v3.0 (see [COPYING](COPYING)). This repository provides the complete corresponding source (pinned upstream submodules, build scripts, and Android wrapper sources) required to rebuild the distributed APK.

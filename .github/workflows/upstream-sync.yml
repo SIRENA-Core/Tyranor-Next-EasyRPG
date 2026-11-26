@@ -1,0 +1,144 @@
+name: Upstream Sync
+
+on:
+  schedule:
+    # Weekly on Monday at 03:00 UTC (11:00 UTC+8)
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      player_ref:
+        description: 'Optional EasyRPG/Player commit or tag (empty = master)'
+        required: false
+        default: ''
+      buildscripts_ref:
+        description: 'Optional EasyRPG/buildscripts commit or tag (empty = master)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: true
+
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest
+    env:
+      NDK_VERSION: 28.2.13676358
+      SYNC_BRANCH: chore/upstream-sync
+
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Sync upstream submodules
+        id: sync
+        run: |
+          ARGS=(--summary-file "${RUNNER_TEMP}/upstream-sync-summary.md")
+          if [ -n "${{ inputs.player_ref }}" ]; then
+            ARGS+=(--player-ref "${{ inputs.player_ref }}")
+          fi
+          if [ -n "${{ inputs.buildscripts_ref }}" ]; then
+            ARGS+=(--buildscripts-ref "${{ inputs.buildscripts_ref }}")
+          fi
+          ./scripts/sync_upstream.sh "${ARGS[@]}"
+
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Upstream submodules and configuration are already up to date."
+          fi
+
+      - name: Verify clean upstream submodules
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          test -z "$(git -C third_party/Player status --porcelain)"
+          test -z "$(git -C third_party/buildscripts status --porcelain)"
+
+      - name: Install host build tools
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake libtool pkg-config \
+            cmake ninja-build meson \
+            curl unzip perl patch python3
+
+      - name: Set up JDK 17
+        if: steps.sync.outputs.changed == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        if: steps.sync.outputs.changed == 'true'
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK and SDK components
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager \
+            "platforms;android-37" \
+            "build-tools;36.0.0" \
+            "cmake;3.22.1" \
+            "ndk;${NDK_VERSION}"
+
+      - name: Cache prebuilt arm64-v8a toolchain
+        if: steps.sync.outputs.changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            .toolchains/arm64-v8a-toolchain
+            .toolchains/downloads
+          key: easyrpg-sync-arm64-${{ runner.os }}-${{ hashFiles('.git/modules/third_party/buildscripts/HEAD', 'scripts/build_toolchain.sh') }}
+
+      - name: Build arm64-v8a dependency toolchain
+        if: steps.sync.outputs.changed == 'true'
+        run: ./scripts/build_toolchain.sh --abis arm64-v8a
+
+      - name: Set up Gradle
+        if: steps.sync.outputs.changed == 'true'
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run unit tests and verify arm64-v8a release APK
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          ./gradlew :app:testDebugUnitTest --no-daemon
+          ./gradlew :app:assembleRelease -PABI_FILTERS_RELEASE=arm64-v8a --no-daemon
+          ./scripts/verify_release_apk.sh app/build/outputs/apk/release/app-release.apk
+
+      - name: Push branch and open or update PR
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout -B "${SYNC_BRANCH}"
+          git add gradle.properties third_party/Player third_party/buildscripts
+          git commit -m "chore: sync upstream EasyRPG submodules"
+          git push --force origin "HEAD:${SYNC_BRANCH}"
+
+          PR_TITLE="chore: sync upstream EasyRPG submodules"
+          EXISTING_PR="$(gh pr list --head "${SYNC_BRANCH}" --base main --state open --json number --jq '.[0].number // empty')"
+          if [ -n "${EXISTING_PR}" ]; then
+            gh pr edit "${EXISTING_PR}" \
+              --title "${PR_TITLE}" \
+              --body-file "${RUNNER_TEMP}/upstream-sync-summary.md"
+          else
+            gh pr create \
+              --base main \
+              --head "${SYNC_BRANCH}" \
+              --title "${PR_TITLE}" \
+              --body-file "${RUNNER_TEMP}/upstream-sync-summary.md"
+          fi
