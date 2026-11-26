@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tyn_permission_title">需要存储权限</string>
+    <string name="tyn_permission_message_manage_all">EasyRPG 需要「所有文件访问权限」以直接读取 RPG Maker 2000/2003 游戏目录并写入存档。</string>
+    <string name="tyn_permission_message_legacy">EasyRPG 需要外部存储读写权限以读取游戏目录并写入存档。</string>
+    <string name="tyn_permission_grant">前往授权</string>
+    <string name="tyn_error_title">无法启动游戏</string>
+    <string name="tyn_error_missing_game_dir">启动请求中未提供游戏目录。</string>
+    <string name="tyn_error_invalid_game_dir">游戏目录不存在或不可读取：\n%1$s</string>
+    <string name="tyn_error_create_saves_failed">无法创建存档目录：\n%1$s</string>
+    <string name="tyn_error_create_config_failed">无法创建配置目录：\n%1$s</string>
+</resources>

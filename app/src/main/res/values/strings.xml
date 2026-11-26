@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tyn_easyrpg_app_name" translatable="false">Tyranor EasyRPG</string>
+    <string name="tyn_permission_title">Storage Permission Required</string>
+    <string name="tyn_permission_message_manage_all">EasyRPG needs "All files access" permission to read RPG Maker 2000/2003 game folders and write saves directly.</string>
+    <string name="tyn_permission_message_legacy">EasyRPG needs external storage permission to read game folders and write saves.</string>
+    <string name="tyn_permission_grant">Grant Permission</string>
+    <string name="tyn_error_title">Cannot Launch Game</string>
+    <string name="tyn_error_missing_game_dir">No game directory was provided in the launch request.</string>
+    <string name="tyn_error_invalid_game_dir">The game directory is missing or unreadable:\n%1$s</string>
+    <string name="tyn_error_create_saves_failed">Unable to create the saves directory:\n%1$s</string>
+    <string name="tyn_error_create_config_failed">Unable to create the configuration directory:\n%1$s</string>
+</resources>

@@ -1,0 +1,29 @@
+[versions]
+agp = "9.5.1"
+androidxActivity = "1.13.0"
+androidxAppcompat = "1.8.0"
+androidxCardview = "1.0.0"
+androidxConstraintlayout = "2.2.2"
+androidxCore = "1.18.0"
+androidxDocumentfile = "1.1.0"
+androidxRecyclerview = "1.4.0"
+ini4j = "0.5.4"
+json = "20240303"
+junit = "4.13.2"
+material = "1.14.0"
+
+[libraries]
+androidx-activity = { module = "androidx.activity:activity", version.ref = "androidxActivity" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppcompat" }
+androidx-cardview = { module = "androidx.cardview:cardview", version.ref = "androidxCardview" }
+androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidxConstraintlayout" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
+androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "androidxDocumentfile" }
+androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "androidxRecyclerview" }
+ini4j = { module = "org.ini4j:ini4j", version.ref = "ini4j" }
+json = { module = "org.json:json", version.ref = "json" }
+junit = { module = "junit:junit", version.ref = "junit" }
+material = { module = "com.google.android.material:material", version.ref = "material" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
