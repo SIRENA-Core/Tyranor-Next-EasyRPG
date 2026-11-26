@@ -69,12 +69,12 @@ if [ -z "$SDK_ROOT" ]; then
 fi
 
 resolve_ndk_dir() {
-    if [ -n "${ANDROID_NDK_HOME:-}" ] && [ -d "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt" ]; then
-        echo "$ANDROID_NDK_HOME"
-        return 0
-    fi
     if [ -d "$SDK_ROOT/ndk/$NDK_VERSION/toolchains/llvm/prebuilt" ]; then
         echo "$SDK_ROOT/ndk/$NDK_VERSION"
+        return 0
+    fi
+    if [ -n "${ANDROID_NDK_HOME:-}" ] && [ -d "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt" ]; then
+        echo "$ANDROID_NDK_HOME"
         return 0
     fi
     local fallback
@@ -162,13 +162,66 @@ source "$BUILDSCRIPTS_DIR/shared/common.sh"
 source "$BUILDSCRIPTS_DIR/shared/packages.sh"
 SCRIPT_DIR="$_SAVED_SCRIPT_DIR"
 
+# Validate downloaded archives so HTML error pages never poison the download cache.
+is_valid_archive() {
+    local archive="$1"
+    [ -s "$archive" ] || return 1
+    case "$archive" in
+        *.zip)
+            unzip -tq "$archive" >/dev/null 2>&1
+            ;;
+        *.tar.gz|*.tgz)
+            tar -tzf "$archive" >/dev/null 2>&1
+            ;;
+        *.tar.bz2)
+            tar -tjf "$archive" >/dev/null 2>&1
+            ;;
+        *.tar.xz)
+            tar -tJf "$archive" >/dev/null 2>&1
+            ;;
+        *)
+            tar -tf "$archive" >/dev/null 2>&1
+            ;;
+    esac
+}
+
+download_verified() {
+    local url="$1"
+    local dest="$2"
+    local file="${url##*/}"
+    local tmp="${dest}.tmp"
+    local mirror_url="https://easyrpg.org/downloads/sources/${file}"
+
+    rm -f "$tmp"
+    if [ "${USE_EASYRPG_MIRROR:-0}" != "1" ]; then
+        if curl --fail -sSL --retry 3 --connect-timeout 10 -o "$tmp" "$url" && is_valid_archive "$tmp"; then
+            mv -f "$tmp" "$dest"
+            return 0
+        fi
+        rm -f "$tmp"
+    fi
+
+    echo "Falling back to EasyRPG mirror for $file..."
+    if curl --fail -sSL --retry 3 --connect-timeout 15 -o "$tmp" "$mirror_url" && is_valid_archive "$tmp"; then
+        mv -f "$tmp" "$dest"
+        return 0
+    fi
+    rm -f "$tmp"
+    echo "ERROR: Failed to download a valid archive for $file" >&2
+    return 1
+}
+
 # Override download_and_extract to populate DOWNLOAD_CACHE on cache miss.
 cached_download_and_extract() {
     local url="$1"
     local file="${url##*/}"
     msg "Preparing $file..."
+    if [ -e "$DOWNLOAD_CACHE/$file" ] && ! is_valid_archive "$DOWNLOAD_CACHE/$file"; then
+        echo "Removing corrupted cached archive $file..."
+        rm -f "$DOWNLOAD_CACHE/$file"
+    fi
     if [ ! -e "$DOWNLOAD_CACHE/$file" ]; then
-        (cd "$DOWNLOAD_CACHE" && download "$url")
+        download_verified "$url" "$DOWNLOAD_CACHE/$file"
     fi
     cp "$DOWNLOAD_CACHE/$file" "$BUILD_DIR/$file"
     extract "$BUILD_DIR/$file"
