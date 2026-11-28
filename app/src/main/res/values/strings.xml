@@ -10,4 +10,9 @@
     <string name="tyn_error_invalid_game_dir">The game directory is missing or unreadable:\n%1$s</string>
     <string name="tyn_error_create_saves_failed">Unable to create the saves directory:\n%1$s</string>
     <string name="tyn_error_create_config_failed">Unable to create the configuration directory:\n%1$s</string>
+    <string name="tyn_running_conflict_title">Game Already Running</string>
+    <string name="tyn_running_conflict_message">\"%1$s\" is currently running. To prevent losing unsaved progress, please exit the running game before launching another one.</string>
+    <string name="tyn_running_conflict_message_unknown">Another EasyRPG game is currently running. To prevent losing unsaved progress, please exit it before launching another game.</string>
+    <string name="tyn_running_return_current">Return to Current Game</string>
+    <string name="tyn_running_conflict_toast">Another game is already running. Please exit it first.</string>
 </resources>

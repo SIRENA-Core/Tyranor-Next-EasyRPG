@@ -58,64 +58,75 @@
             android:value="EasyRPG Player" />
         <meta-data
             android:name="SDL_ENV.SDL_ANDROID_ALLOW_RECREATE_ACTIVITY"
-            android:value="1" />
+            android:value="0" />
 
-        <!-- Headless launcher entry invoked by TyranorNext (no MAIN/LAUNCHER icon) -->
+        <!-- Headless launcher entry invoked by TyranorNext (default process, separated task) -->
         <activity
             android:name="com.tyranor.next.easyrpg.LaunchActivity"
+            android:excludeFromRecents="true"
             android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:taskAffinity=""
+            android:theme="@style/AppTheme.TranslucentLauncher">
             <intent-filter>
                 <action android:name="com.tyranor.next.easyrpg.action.RUN" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 
-        <!-- EasyRPG SDL3 Player Activity subclass -->
+        <!-- EasyRPG SDL3 Player Activity subclass isolated in :game process -->
         <activity
             android:name="com.tyranor.next.easyrpg.TynEasyRpgPlayerActivity"
-            android:configChanges="orientation|screenSize"
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
             android:exported="false"
+            android:launchMode="singleTask"
             android:preferMinimalPostProcessing="true"
+            android:process=":game"
             android:theme="@style/AppThemePlayerActivity"
             tools:targetApi="r" />
 
-        <!-- Upstream layout editor & settings activities used by the in-game drawer -->
+        <!-- Upstream layout editor & settings activities share :game process with SettingsManager -->
         <activity
             android:name="org.easyrpg.player.button_mapping.ButtonMappingActivity"
-            android:configChanges="orientation|screenSize"
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
             android:exported="false"
+            android:process=":game"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name="org.easyrpg.player.settings.SettingsMainActivity"
             android:exported="false"
-            android:label="@string/settings" />
+            android:label="@string/settings"
+            android:process=":game" />
         <activity
             android:name="org.easyrpg.player.settings.SettingsVideoActivity"
             android:exported="false"
             android:label="@string/video"
-            android:parentActivityName="org.easyrpg.player.settings.SettingsMainActivity" />
+            android:parentActivityName="org.easyrpg.player.settings.SettingsMainActivity"
+            android:process=":game" />
         <activity
             android:name="org.easyrpg.player.settings.SettingsAudioActivity"
             android:exported="false"
             android:label="@string/audio"
-            android:parentActivityName="org.easyrpg.player.settings.SettingsMainActivity" />
+            android:parentActivityName="org.easyrpg.player.settings.SettingsMainActivity"
+            android:process=":game" />
         <activity
             android:name="org.easyrpg.player.settings.SettingsGamesFolderActivity"
             android:exported="false"
             android:label="@string/easyrpg_folders"
-            android:parentActivityName="org.easyrpg.player.settings.SettingsMainActivity" />
+            android:parentActivityName="org.easyrpg.player.settings.SettingsMainActivity"
+            android:process=":game" />
         <activity
             android:name="org.easyrpg.player.settings.SettingsInputActivity"
             android:exported="false"
             android:label="@string/input"
-            android:parentActivityName="org.easyrpg.player.settings.SettingsMainActivity" />
+            android:parentActivityName="org.easyrpg.player.settings.SettingsMainActivity"
+            android:process=":game" />
         <activity
             android:name="org.easyrpg.player.settings.SettingsFontActivity"
             android:exported="false"
             android:label="@string/font"
-            android:parentActivityName="org.easyrpg.player.settings.SettingsMainActivity" />
+            android:parentActivityName="org.easyrpg.player.settings.SettingsMainActivity"
+            android:process=":game" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -1,5 +1,6 @@
 package com.tyranor.next.easyrpg
 
+import android.app.ActivityManager
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
@@ -76,6 +77,17 @@ class LaunchActivity : AppCompatActivity() {
             return
         }
 
+        val runningSession = ActiveGameSessionStore.forContext(this)
+            .resolveActiveSession(findRunningGameProcessPid())
+        if (runningSession != null) {
+            if (ActiveGameSessionStore.isSameGame(runningSession.gameDir, rawGameDir)) {
+                bringRunningGameToFront()
+                return
+            }
+            showRunningConflictDialog(runningSession)
+            return
+        }
+
         if (!StoragePermissionHelper.hasStoragePermission(this)) {
             showPermissionPrompt()
             return
@@ -112,11 +124,13 @@ class LaunchActivity : AppCompatActivity() {
         )
 
         val playerIntent = Intent(this, TynEasyRpgPlayerActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             putExtra(EasyRpgPlayerActivity.TAG_COMMAND_LINE, args)
             putExtra(EasyRpgPlayerActivity.TAG_SAVE_PATH, savesDir.absolutePath)
             putExtra(EasyRpgPlayerActivity.TAG_LOG_FILE, logFile.absolutePath)
             putExtra(EasyRpgPlayerActivity.TAG_STANDALONE, true)
             putExtra(TynEasyRpgPlayerActivity.EXTRA_NO_RTP, settings.noRtp)
+            putExtra(TynEasyRpgPlayerActivity.EXTRA_ACTIVE_GAME_DIR, gameDir.absolutePath)
             intent.getStringExtra(EasyRpgHostContract.EXTRA_TITLE)
                 ?.takeIf { it.isNotBlank() }
                 ?.let { putExtra(EasyRpgHostContract.EXTRA_TITLE, it) }
@@ -126,6 +140,55 @@ class LaunchActivity : AppCompatActivity() {
         dismissActiveDialog()
         startActivity(playerIntent)
         finish()
+    }
+
+    private fun findRunningGameProcessPid(): Int? {
+        val manager = getSystemService(ACTIVITY_SERVICE) as? ActivityManager ?: return null
+        val processes = try {
+            manager.runningAppProcesses
+        } catch (_: Throwable) {
+            null
+        } ?: return null
+        val gameProcessName = "$packageName:game"
+        return processes.firstOrNull { it.processName == gameProcessName }?.pid
+    }
+
+    private fun bringRunningGameToFront() {
+        val resumeIntent = Intent(this, TynEasyRpgPlayerActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        }
+        launched = true
+        dismissActiveDialog()
+        startActivity(resumeIntent)
+        finish()
+    }
+
+    private fun showRunningConflictDialog(session: ActiveGameSession) {
+        if (activeDialog?.isShowing == true) {
+            return
+        }
+        val runningLabel = session.gameTitle?.takeIf { it.isNotBlank() }
+            ?: session.gameDir?.let { File(it).name.ifBlank { null } }
+        val message = if (runningLabel != null) {
+            getString(R.string.tyn_running_conflict_message, runningLabel)
+        } else {
+            getString(R.string.tyn_running_conflict_message_unknown)
+        }
+
+        activeDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.tyn_running_conflict_title)
+            .setMessage(message)
+            .setCancelable(true)
+            .setPositiveButton(R.string.tyn_running_return_current) { _, _ ->
+                bringRunningGameToFront()
+            }
+            .setNegativeButton(android.R.string.cancel) { _, _ ->
+                finish()
+            }
+            .setOnCancelListener {
+                finish()
+            }
+            .show()
     }
 
     private fun validateReadableDirectory(file: File): File? {

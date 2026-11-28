@@ -9,4 +9,9 @@
     <string name="tyn_error_invalid_game_dir">游戏目录不存在或不可读取：\n%1$s</string>
     <string name="tyn_error_create_saves_failed">无法创建存档目录：\n%1$s</string>
     <string name="tyn_error_create_config_failed">无法创建配置目录：\n%1$s</string>
+    <string name="tyn_running_conflict_title">已有游戏正在运行</string>
+    <string name="tyn_running_conflict_message">「%1$s」正在运行中。为避免未保存进度丢失，请先退出当前游戏后再启动其他游戏。</string>
+    <string name="tyn_running_conflict_message_unknown">当前已有其他 EasyRPG 游戏正在运行。为避免未保存进度丢失，请先退出当前游戏后再启动其他游戏。</string>
+    <string name="tyn_running_return_current">返回当前游戏</string>
+    <string name="tyn_running_conflict_toast">已有游戏正在运行，请先退出当前游戏。</string>
 </resources>

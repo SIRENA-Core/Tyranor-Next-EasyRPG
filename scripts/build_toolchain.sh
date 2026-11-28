@@ -134,12 +134,32 @@ TOOLCHAIN_BASE="$REPO_ROOT/.toolchains"
 BUILD_DIR="$TOOLCHAIN_BASE/build"
 DOWNLOAD_CACHE="$TOOLCHAIN_BASE/downloads"
 
+is_abi_prebuilt() {
+    local abi="$1"
+    [ -f "$TOOLCHAIN_BASE/${abi}-toolchain/lib/liblcf.a" ] &&
+        [ -f "$TOOLCHAIN_BASE/${abi}-toolchain/lib/libz.a" ] &&
+        [ -f "$TOOLCHAIN_BASE/${abi}-toolchain/lib/libpng.a" ]
+}
+
 if [ "$CLEAN_BUILD" -eq 1 ]; then
     rm -rf "$BUILD_DIR"
     IFS=',' read -r -a _clean_abis <<< "$ABIS"
     for abi in "${_clean_abis[@]}"; do
         rm -rf "$TOOLCHAIN_BASE/${abi}-toolchain"
     done
+else
+    IFS=',' read -r -a _check_abis <<< "$ABIS"
+    _all_prebuilt=1
+    for abi in "${_check_abis[@]}"; do
+        if ! is_abi_prebuilt "$abi"; then
+            _all_prebuilt=0
+            break
+        fi
+    done
+    if [ "$_all_prebuilt" -eq 1 ]; then
+        echo "All requested ABIs ($ABIS) already prebuilt in $TOOLCHAIN_BASE; skipping."
+        exit 0
+    fi
 fi
 
 mkdir -p "$BUILD_DIR" "$DOWNLOAD_CACHE"
